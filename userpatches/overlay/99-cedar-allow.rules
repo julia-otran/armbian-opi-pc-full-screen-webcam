@@ -1,0 +1,1 @@
+KERNEL=="cedar_dev", MODE="0770", GROUP="video"

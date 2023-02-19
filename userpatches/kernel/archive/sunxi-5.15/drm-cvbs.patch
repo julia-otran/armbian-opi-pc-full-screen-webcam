@@ -1,0 +1,68 @@
+diff --git a/drivers/gpu/drm/sun4i/sun8i_csc.c b/drivers/gpu/drm/sun4i/sun8i_csc.c
+index 9bd62de0c..410054e51 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_csc.c
++++ b/drivers/gpu/drm/sun4i/sun8i_csc.c
+@@ -186,7 +186,7 @@ static void sun8i_csc_enable(struct regmap *map, u32 base, bool enable)
+ 	else
+ 		val = 0;
+ 
+-	regmap_update_bits(map, SUN8I_CSC_CTRL(base), SUN8I_CSC_CTRL_EN, val);
++	regmap_write(map, SUN8I_CSC_CTRL(base), val);
+ }
+ 
+ static void sun8i_de3_ccsc_enable(struct regmap *map, int layer, bool enable)
+diff --git a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+index 976526b54..6aa6bab71 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
++++ b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+@@ -130,9 +130,8 @@ static void sun8i_vi_layer_update_alpha(struct sun8i_mixer *mixer, int channel,
+ 								  overlay),
+ 				   mask, val);
+ 	} else if (mixer->cfg->vi_num == 1) {
+-		regmap_update_bits(mixer->engine.regs,
++		regmap_write(mixer->engine.regs,
+ 				   SUN8I_MIXER_FCC_GLOBAL_ALPHA_REG,
+-				   SUN8I_MIXER_FCC_GLOBAL_ALPHA_MASK,
+ 				   SUN8I_MIXER_FCC_GLOBAL_ALPHA
+ 					(plane->state->alpha >> 8));
+ 	}
+@@ -280,5 +279,10 @@ static int sun8i_vi_layer_update_coord(struct sun8i_mixer *mixer, int channel,
+ 		     SUN8I_MIXER_BLEND_ATTR_INSIZE(bld_base, zpos),
+ 		     outsize);
+ 
++	/* Set FCC Coordinates */
++	regmap_write(mixer->engine.regs, 0xAA004, outsize);
++	regmap_write(mixer->engine.regs, 0xAA008, 0);
++	regmap_write(mixer->engine.regs, 0xAA00c, outsize);
++
+ 	return 0;
+ }
+@@ -468,6 +467,4 @@ static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
+ 		sun8i_vi_layer_update_coord(mixer, layer->channel,
+ 					    layer->overlay, plane, zpos);
+-		sun8i_vi_layer_update_alpha(mixer, layer->channel,
+-					    layer->overlay, plane);
+ 		sun8i_vi_layer_update_formats(mixer, layer->channel,
+ 					      layer->overlay, plane);
+@@ -493,5 +471,7 @@ static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
+ 		sun8i_vi_layer_update_buffer(mixer, layer->channel,
+ 					     layer->overlay, plane);
++		sun8i_vi_layer_update_alpha(mixer, layer->channel,
++					    layer->overlay, plane);
+ 	}
+ 
+ 	sun8i_vi_debug(plane, "sun8i_vi_layer_enable");
+diff --git a/drivers/gpu/drm/sun4i/sun8i_vi_layer.h b/drivers/gpu/drm/sun4i/sun8i_vi_layer.h
+index 48c399e1c..1e05b203f 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_vi_layer.h
++++ b/drivers/gpu/drm/sun4i/sun8i_vi_layer.h
+@@ -32,8 +32,8 @@
+ #define SUN8I_MIXER_FCC_GLOBAL_ALPHA_REG \
+ 		(0xAA000 + 0x90)
+ 
+-#define SUN8I_MIXER_FCC_GLOBAL_ALPHA(x)			((x) << 24)
+ #define SUN8I_MIXER_FCC_GLOBAL_ALPHA_MASK		GENMASK(31, 24)
++#define SUN8I_MIXER_FCC_GLOBAL_ALPHA(x)			(((x) << 24) & SUN8I_MIXER_FCC_GLOBAL_ALPHA_MASK)
+ 
+ #define SUN8I_MIXER_CHAN_VI_LAYER_ATTR_EN		BIT(0)
+ /* RGB mode should be set for RGB formats and cleared for YCbCr */

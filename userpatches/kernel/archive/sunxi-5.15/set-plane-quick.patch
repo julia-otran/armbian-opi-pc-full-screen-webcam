@@ -1,0 +1,64 @@
+diff --git a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+index 362f48080..23b6fe501 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
++++ b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+@@ -463,7 +463,7 @@ static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
+ 	bool was_enabled = old_state->crtc && old_state->visible;
+ 	bool enable = new_state->crtc && new_state->visible;
+ 
+-	if (enable) {
++	if (!was_enabled && enable) {
+ 		sun8i_vi_layer_update_coord(mixer, layer->channel,
+ 					    layer->overlay, plane, zpos);
+ 		sun8i_vi_layer_update_formats(mixer, layer->channel,
+@@ -472,6 +472,50 @@ static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
+ 					     layer->overlay, plane);
+ 		sun8i_vi_layer_update_alpha(mixer, layer->channel,
+ 					    layer->overlay, plane);
++		
++		sun8i_vi_layer_enable(mixer, layer->channel, layer->overlay,
++		      was_enabled, enable, zpos, old_zpos);
++		
++		return;
++	}
++
++	if (was_enabled && enable) {
++		bool coord_changed = 
++			zpos != old_zpos ||
++			old_state->src.x1 != new_state->src.x1 ||
++			old_state->src.x2 != new_state->src.x2 ||
++			old_state->src.y1 != new_state->src.y1 ||
++			old_state->src.y2 != new_state->src.y2 ||
++			old_state->dst.x1 != new_state->dst.x1 ||
++			old_state->dst.x2 != new_state->dst.x2 ||
++			old_state->dst.y1 != new_state->dst.y1 ||
++			old_state->dst.y2 != new_state->dst.y2 ||
++			old_state->crtc_x  != new_state->crtc_x ||
++			old_state->crtc_y  != new_state->crtc_y ||
++			old_state->crtc_w  != new_state->crtc_w ||
++			old_state->crtc_h  != new_state->crtc_h;
++		
++		if (coord_changed) {
++			sun8i_vi_layer_update_coord(mixer, layer->channel,
++						layer->overlay, plane, zpos);
++		}
++
++		if (old_state->fb->format->format != new_state->fb->format->format) {
++			sun8i_vi_layer_update_formats(mixer, layer->channel,
++						layer->overlay, plane);
++		}
++
++		if (old_state->fb != new_state->fb) {
++			sun8i_vi_layer_update_buffer(mixer, layer->channel,
++						layer->overlay, plane);
++		}
++
++		if (old_state->alpha != new_state->alpha) {
++			sun8i_vi_layer_update_alpha(mixer, layer->channel,
++						layer->overlay, plane);
++		}
++
++		return;
+ 	}
+ 
+ 	sun8i_vi_layer_enable(mixer, layer->channel, layer->overlay,

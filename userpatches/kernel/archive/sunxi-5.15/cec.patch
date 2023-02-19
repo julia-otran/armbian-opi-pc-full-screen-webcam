@@ -1,0 +1,54 @@
+diff --git a/drivers/media/cec/core/cec-adap.c b/drivers/media/cec/core/cec-adap.c
+index 67776a0d3..30f665d4e 100644
+--- a/drivers/media/cec/core/cec-adap.c
++++ b/drivers/media/cec/core/cec-adap.c
+@@ -1922,6 +1922,10 @@ static int cec_receive_notify(struct cec_adapter *adap, struct cec_msg *msg,
+ 			return 0;
+ 	}
+ 
++	if (adap->prevent_reply && msg->msg[1] != CEC_MSG_REPORT_PHYSICAL_ADDR) {
++		goto skip_processing;
++	}
++
+ 	/*
+ 	 * REPORT_PHYSICAL_ADDR, CEC_MSG_USER_CONTROL_PRESSED and
+ 	 * CEC_MSG_USER_CONTROL_RELEASED messages always have to be
+diff --git a/drivers/media/cec/core/cec-api.c b/drivers/media/cec/core/cec-api.c
+index 52c30e4e2..b099f66eb 100644
+--- a/drivers/media/cec/core/cec-api.c
++++ b/drivers/media/cec/core/cec-api.c
+@@ -381,6 +381,8 @@ static long cec_s_mode(struct cec_adapter *adap, struct cec_fh *fh,
+ 		return -EINVAL;
+ 	}
+ 
++	adap->prevent_reply = mode & CEC_MODE_PREVENT_REPLY;
++
+ 	mode_initiator = mode & CEC_MODE_INITIATOR_MSK;
+ 	mode_follower = mode & CEC_MODE_FOLLOWER_MSK;
+ 
+diff --git a/include/media/cec.h b/include/media/cec.h
+index 77346f757..81f038358 100644
+--- a/include/media/cec.h
++++ b/include/media/cec.h
+@@ -259,6 +259,8 @@ struct cec_adapter {
+ 	u32 sequence;
+ 
+ 	char input_phys[32];
++
++	bool prevent_reply;
+ };
+ 
+ static inline void *cec_get_drvdata(const struct cec_adapter *adap)
+diff --git a/include/uapi/linux/cec.h b/include/uapi/linux/cec.h
+index de936f5e4..7f93b9f28 100644
+--- a/include/uapi/linux/cec.h
++++ b/include/uapi/linux/cec.h
+@@ -299,6 +299,8 @@ static inline int cec_is_unconfigured(__u16 log_addr_mask)
+ #define CEC_MODE_MONITOR_ALL		(0xf << 4)
+ #define CEC_MODE_FOLLOWER_MSK		0xf0
+ 
++#define CEC_MODE_PREVENT_REPLY		0x100
++
+ /* Userspace has to configure the physical address */
+ #define CEC_CAP_PHYS_ADDR	(1 << 0)
+ /* Userspace has to configure the logical addresses */
