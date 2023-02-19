@@ -1,0 +1,16 @@
+[Unit]
+Description=Webcam Display
+After=plymouth-quit-wait.service
+
+[Service]
+# temporary safety check until all DMs are converted to correct
+# display-manager.service symlink handling
+PermissionsStartOnly=true
+ExecStart=/scripts/webcam-view.sh
+User=webcam
+Group=webcam
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
+
