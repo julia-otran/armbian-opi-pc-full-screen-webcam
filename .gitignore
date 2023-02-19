@@ -18,6 +18,12 @@ ubuntu-*-cloudimg-console.log
 /*userpatches*/
 /userpatches
 
+!/userpatches/kernel/sunxi-5.15
+!/userpatches/customize-image.sh
+!/userpatches/config-default.conf
+!/userpatches/linux-sunxi-current.config
+!/userpatches/overlay
+
 ### General annoyances ###
 .DS_Store
 *~
