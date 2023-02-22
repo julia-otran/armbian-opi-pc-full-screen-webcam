@@ -24,31 +24,46 @@ Main() {
 	groupadd video
 
 	cp /tmp/overlay/99-cedar-allow.rules /etc/udev/rules.d
-
-	mkdir -p /var/www/guvcview
-	chown root:video /var/www/guvcview
-	chmod 770 /var/www/guvcview
 	
 	groupadd webcam
-	useradd -m -d /home/webcam -g webcam -G video -s /bin/zsh webcam
+	useradd -m -d /home/webcam -g webcam -G video -s /bin/bash webcam
 
-	sudo -H -u webcam bash -c 'cp -R /tmp/overlay/guvcview /home/webcam'
-	sudo -H -u webcam bash -c 'cd /home/webcam/guvcview && ./bootsrap.sh'
-	sudo -H -u webcam bash -c 'cd /home/webcam/guvcview && make'
-	sudo -H -u webcam bash -c 'mkdir -p /home/webcam/.config/guvcview2'
+	cp -R /tmp/overlay/guvcview /home/webcam
 
 	cd /home/webcam/guvcview
-
+	
+	apt-get install -y autoconf autotools-dev make gcc build-essential intltool pkg-config libjson-c-dev libv4l-dev libudev-dev libusb-1.0-0 libusb-1.0-0-dev libdrm-dev libtool libgettextpo0 libgettextpo-dev libglib2.0-dev
+	./bootstrap.sh
+	make
 	make install
+
+	mkdir -p /home/webcam/.config/guvcview2
+
+	chown -R webcam:webcam /home/webcam
 
 	mkdir /scripts
 	cp /tmp/overlay/webcam-view.sh /scripts
-	chmod webcam:video /scripts/webcam-view.sh
+	chown webcam:video /scripts/webcam-view.sh
 
 	cp /tmp/overlay/webcam.service /lib/systemd/system/webcam.service
 
-	systemctl daemon-reload
 	systemctl enable webcam
+
+	apt-get install -y ufw nginx
+
+	ufw allow from 172.3.0.0/24 to any port 22
+	ufw allow from 172.3.0.0/24 to any port 80
+	ufw enable
+
+	cp /tmp/overlay/nginx-default /etc/nginx/sites-available/default
+
+	usermod -a -G www-data webcam
+
+	cp -R /tmp/overlay/remote-ctl/build/. /var/www/html
+
+	mkdir -p /var/www/guvcview
+	chown www-data:www-data /var/www/guvcview
+	chmod 770 /var/www/guvcview
 } # Main
 
 InstallOpenMediaVault() {

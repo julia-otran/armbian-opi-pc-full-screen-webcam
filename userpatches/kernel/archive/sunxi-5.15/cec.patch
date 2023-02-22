@@ -17,6 +17,14 @@ diff --git a/drivers/media/cec/core/cec-api.c b/drivers/media/cec/core/cec-api.c
 index 52c30e4e2..b099f66eb 100644
 --- a/drivers/media/cec/core/cec-api.c
 +++ b/drivers/media/cec/core/cec-api.c
+@@ -377,6 +377,6 @@ static long cec_s_mode(struct cec_adapter *adap, struct cec_fh *fh,
+ 	if (copy_from_user(&mode, parg, sizeof(mode)))
+ 		return -EFAULT;
+-	if (mode & ~(CEC_MODE_INITIATOR_MSK | CEC_MODE_FOLLOWER_MSK)) {
++	if (mode & ~(CEC_MODE_INITIATOR_MSK | CEC_MODE_FOLLOWER_MSK | CEC_MODE_PREVENT_REPLY)) {
+ 		dprintk(1, "%s: invalid mode bits set\n", __func__);
+ 		return -EINVAL;
+ 	}
 @@ -381,6 +381,8 @@ static long cec_s_mode(struct cec_adapter *adap, struct cec_fh *fh,
  		return -EINVAL;
  	}
