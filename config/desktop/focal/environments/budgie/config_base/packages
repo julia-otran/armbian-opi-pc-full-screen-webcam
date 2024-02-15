@@ -57,6 +57,7 @@ evince-common
 fontconfig
 fontconfig-config
 fonts-noto-mono
+fonts-ubuntu
 fonts-ubuntu-font-family-console
 foomatic-db-compressed-ppds
 gdebi
@@ -113,8 +114,7 @@ libproxy1-plugin-networkmanager
 libu2f-udev
 libwmf0.2-7-gtk
 libxcursor1
-lightdm
-lightdm-settings
+gdm3
 mesa-utils
 mousepad
 mousetweaks
@@ -147,7 +147,6 @@ profile-sync-daemon
 pulseaudio-module-bluetooth
 redshift
 samba
-slick-greeter
 smbclient
 software-properties-gtk
 spice-vdagent
@@ -189,4 +188,5 @@ xorg-docs-core
 xscreensaver
 xserver-xorg
 xserver-xorg-video-fbdev
+xauth
 xwallpaper

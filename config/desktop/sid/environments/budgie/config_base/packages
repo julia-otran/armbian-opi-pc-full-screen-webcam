@@ -56,7 +56,6 @@ fontconfig-config
 fonts-noto-mono
 foomatic-db-compressed-ppds
 gdebi
-ghostscript-x
 gist
 gnome-screenshot
 gnome-disk-utility
@@ -93,8 +92,7 @@ libu2f-udev
 libwmf0.2-7-gtk
 libxapp1
 libxcursor1
-lightdm
-lightdm-settings
+gdm3
 mesa-utils
 mousepad
 mousetweaks
@@ -125,7 +123,6 @@ pulseaudio-module-bluetooth
 qalculate-gtk
 redshift
 samba
-slick-greeter
 smbclient
 software-properties-gtk
 spice-vdagent
@@ -154,6 +151,7 @@ xbacklight
 xcursor-themes
 xdg-user-dirs
 xdg-user-dirs-gtk
+fonts-ubuntu
 xfonts-100dpi
 xfonts-75dpi
 xfonts-base
@@ -164,5 +162,6 @@ xorg-docs-core
 xscreensaver
 xserver-xorg
 xserver-xorg-video-fbdev
+xauth
 xwallpaper
 

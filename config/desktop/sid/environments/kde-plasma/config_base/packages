@@ -30,10 +30,10 @@ fonts-liberation
 fonts-nanum
 fonts-opensymbol
 fonts-stix
+fonts-ubuntu
 fonts-symbola
 foomatic-db-compressed-ppds
 gdebi
-ghostscript-x
 gnome-screenshot
 gnome-disk-utility
 gstreamer1.0-packagekit
@@ -66,8 +66,7 @@ libproxy1-plugin-networkmanager
 libu2f-udev
 libwmf0.2-7-gtk
 libxcursor1
-lightdm
-lightdm-settings
+sddm
 mesa-utils
 mousepad
 mousetweaks
@@ -91,7 +90,6 @@ pulseaudio-module-bluetooth
 plasma-workspace-wayland
 redshift
 samba
-slick-greeter
 smbclient
 software-properties-gtk
 spice-vdagent
@@ -120,6 +118,7 @@ xorg-docs-core
 xscreensaver
 xserver-xorg
 xserver-xorg-video-fbdev
+xauth
 xterm
 xtermcontrol
 xtermset

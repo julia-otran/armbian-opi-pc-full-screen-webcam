@@ -18,10 +18,13 @@ evince
 evince-common
 fontconfig
 fontconfig-config
+fonts-noto-cjk
+fonts-ubuntu
 fonts-ubuntu-console
 foomatic-db-compressed-ppds
 gdebi
 ghostscript-x
+gnome-calculator
 gnome-font-viewer
 gnome-disk-utility
 gnome-screenshot
@@ -41,7 +44,6 @@ keyutils
 laptop-detect
 libatk-adaptor
 libfontconfig1
-libfontembed1
 libfontenc1
 libgail-common
 libgl1-mesa-dri
@@ -120,4 +122,5 @@ xscreensaver
 xsensors
 xserver-xorg
 xserver-xorg-video-fbdev
+xauth
 xwallpaper

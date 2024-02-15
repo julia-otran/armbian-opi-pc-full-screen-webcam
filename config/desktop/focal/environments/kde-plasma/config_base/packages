@@ -33,6 +33,7 @@ fonts-nanum
 fonts-opensymbol
 fonts-stix
 fonts-symbola
+fonts-ubuntu
 fonts-ubuntu-font-family-console
 foomatic-db-compressed-ppds
 gdebi
@@ -86,8 +87,7 @@ libproxy1-plugin-networkmanager
 libu2f-udev
 libwmf0.2-7-gtk
 libxcursor1
-lightdm
-lightdm-settings
+sddm
 mesa-utils
 mousepad
 mousetweaks
@@ -113,7 +113,6 @@ pulseaudio-module-bluetooth
 plasma-workspace-wayland
 redshift
 samba
-slick-greeter
 smbclient
 software-properties-gtk
 spice-vdagent
@@ -156,4 +155,5 @@ xorg-docs-core
 xscreensaver
 xserver-xorg
 xserver-xorg-video-fbdev
+xauth
 xwallpaper
