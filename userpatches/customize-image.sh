@@ -24,15 +24,14 @@ Main() {
 	groupadd video
 
 	cp /tmp/overlay/99-cedar-allow.rules /etc/udev/rules.d
-	
+
 	groupadd webcam
 	useradd -m -d /home/webcam -g webcam -G video -s /bin/bash webcam
 
 	cp -R /tmp/overlay/guvcview /home/webcam
 
 	cd /home/webcam/guvcview
-	
-	apt-get install -y autoconf autotools-dev make gcc build-essential intltool pkg-config libjson-c-dev libv4l-dev libudev-dev libusb-1.0-0 libusb-1.0-0-dev libdrm-dev libtool libgettextpo0 libgettextpo-dev libglib2.0-dev
+
 	./bootstrap.sh
 	make
 	make install
@@ -48,8 +47,6 @@ Main() {
 	cp /tmp/overlay/webcam.service /lib/systemd/system/webcam.service
 
 	systemctl enable webcam
-
-	apt-get install -y ufw nginx
 
 	ufw allow from 172.3.0.0/24 to any port 22
 	ufw allow from 172.3.0.0/24 to any port 80
@@ -71,7 +68,7 @@ InstallOpenMediaVault() {
 	# image (OMV 3 on Jessie, OMV 4 with Stretch). Use of mainline kernel highly
 	# recommended!
 	#
-	# Please note that this variant changes Armbian default security 
+	# Please note that this variant changes Armbian default security
 	# policies since you end up with root password 'openmediavault' which
 	# you have to change yourself later. SSH login as root has to be enabled
 	# through OMV web UI first
@@ -103,7 +100,7 @@ InstallOpenMediaVault() {
 	deb https://openmediavault.github.io/packages/ ${OMV_Name} main
 	## Uncomment the following line to add software from the proposed repository.
 	deb https://openmediavault.github.io/packages/ ${OMV_Name}-proposed main
-	
+
 	## This software is not part of OpenMediaVault, but is offered by third-party
 	## developers as a service to OpenMediaVault users.
 	# deb https://openmediavault.github.io/packages/ ${OMV_Name} partner
@@ -140,7 +137,7 @@ InstallOpenMediaVault() {
 	# install OMV extras, enable folder2ram and tweak some settings
 	FILE=$(mktemp)
 	wget "$OMV_EXTRAS_URL" -qO $FILE && dpkg -i $FILE
-	
+
 	/usr/sbin/omv-update
 	# Install flashmemory plugin and netatalk by default, use nice logo for the latter,
 	# tweak some OMV settings

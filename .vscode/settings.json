@@ -1,5 +1,8 @@
 {
     "[*.inc]": {
         "editor.defaultFormatter": "foxundermoon.shell-format"
+    },
+    "files.associations": {
+        "drm_gem_dma_helper.h": "c"
     }
 }
