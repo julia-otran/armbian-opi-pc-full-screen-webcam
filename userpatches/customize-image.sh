@@ -24,6 +24,7 @@ Main() {
 	groupadd video
 
 	cp /tmp/overlay/99-cedar-allow.rules /etc/udev/rules.d
+	cp /usr/src/linux-headers-6.6.25-current-sunxi/include/uapi/drm/sun4i_drm.h /usr/include/drm
 
 	groupadd webcam
 	useradd -m -d /home/webcam -g webcam -G video -s /bin/bash webcam
