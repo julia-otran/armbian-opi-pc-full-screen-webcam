@@ -1,3 +1,7 @@
 [submodule "userpatches/overlay/remote-ctl"]
 	path = userpatches/overlay/remote-ctl
 	url = https://github.com/julia-otran/guvcview-opipc-remote-ctl.git
+
+[submodule "userpatches/overlay/guvcview"]
+	path = userpatches/overlay/guvcview
+	url = https://github.com/julia-otran/guvcview-opipc.git
