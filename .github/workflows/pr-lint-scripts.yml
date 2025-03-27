@@ -1,0 +1,66 @@
+name: Lint on Scripts
+run-name: 'ShellCheck - PR #${{ github.event.pull_request.number }} ("${{ github.event.pull_request.title }}")'
+
+# -----------------------------------------------------------------------------
+# This workflow runs ShellCheck on all relevant shell scripts in the repository
+# to ensure code quality, best practices, and prevent common scripting errors.
+# It generates a linting report and provides feedback for pull requests.
+#
+# Triggers:
+# - Manually via workflow_dispatch
+# - On pull request events: opened, reopened, or synchronized with new commits
+#
+# Features:
+# - Runs only for PRs targeting the 'Armbian' repository
+# - Checks only modified shell scripts while ignoring non-shell files
+# - Ensures accurate analysis by leveraging framework-specific mechanisms
+# - Uses concurrency control to prevent redundant executions
+# -----------------------------------------------------------------------------
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pipeline-lint-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  Shellcheck:
+    name: Shell script analysis
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'Armbian' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get changed files
+        id: files
+        uses: UplandJacob/retrieve-changed-files@v4
+
+      - name: List and analyze changed shell scripts
+        run: |
+          # Utilize the framework's internal mechanism to check `lib/` and `extensions/` scripts.
+          # This ensures correct context resolution, avoiding false positives in variable usage.
+          bash lib/tools/shellcheck.sh
+
+          ret=0
+
+          for file in ${{ steps.files.outputs.all }}; do
+              # Ignore non-shell files
+              if [[ ! "${file}" =~ lib/|extensions/|.py|.service|.rules|.network|.netdev ]]; then
+                  # Check if the file has a bash shebang and run ShellCheck
+                  if grep -qE "^#\!/.*bash" "$file"; then
+                      shellcheck --severity=error "$file" || ret=$?
+                  fi
+              fi
+          done
+
+          exit $ret
