@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Doe <john.doe@somewhere.on.planet>
+Date: Sun, 18 Feb 2024 07:28:37 +0000
+Subject: Patching kernel sunxi files drivers/gpu/drm/sun4i/sun4i_drv.c
+
+Signed-off-by: John Doe <john.doe@somewhere.on.planet>
+---
+ drivers/gpu/drm/sun4i/sun4i_drv.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/sun4i/sun4i_drv.c b/drivers/gpu/drm/sun4i/sun4i_drv.c
+index 4f7d8818d3f6..3f9622a408ba 100644
+--- a/drivers/gpu/drm/sun4i/sun4i_drv.c
++++ b/drivers/gpu/drm/sun4i/sun4i_drv.c
+@@ -22,11 +22,11 @@
+ #include <drm/drm_module.h>
+ #include <drm/drm_of.h>
+ #include <drm/drm_probe_helper.h>
+ #include <drm/drm_vblank.h>
+ 
+-#include <uapi/drm/sun4i_drm.h>
++#include <drm/sun4i_drm.h>
+ 
+ #include "sun4i_drv.h"
+ #include "sun4i_frontend.h"
+ #include "sun4i_framebuffer.h"
+ #include "sun4i_tcon.h"
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+

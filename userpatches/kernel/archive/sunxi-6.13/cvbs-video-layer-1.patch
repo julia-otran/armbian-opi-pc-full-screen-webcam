@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Doe <john.doe@somewhere.on.planet>
+Date: Tue, 8 Apr 2025 04:57:37 +0000
+Subject: Adjust CVBS video layer 2
+
+Signed-off-by: John Doe <john.doe@somewhere.on.planet>
+---
+ drivers/gpu/drm/sun4i/sun8i_vi_layer.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+index 3cbce3b1bec1..5c8c81da7b2c 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
++++ b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+@@ -40,15 +40,13 @@ static void sun8i_vi_layer_update_alpha(struct sun8i_mixer *mixer, int channel,
+ 		regmap_update_bits(mixer->engine.regs,
+ 				   SUN8I_MIXER_CHAN_VI_LAYER_ATTR(ch_base,
+ 								  overlay),
+ 				   mask, val);
+ 	} else if (mixer->cfg->vi_num == 1) {
+-		regmap_update_bits(mixer->engine.regs,
+-				   SUN8I_MIXER_FCC_GLOBAL_ALPHA_REG,
+-				   SUN8I_MIXER_FCC_GLOBAL_ALPHA_MASK,
+-				   SUN8I_MIXER_FCC_GLOBAL_ALPHA
+-					(plane->state->alpha >> 8));
++		regmap_write(mixer->engine.regs,
++			     SUN8I_MIXER_FCC_GLOBAL_ALPHA_REG,
++			     SUN8I_MIXER_FCC_GLOBAL_ALPHA(plane->state->alpha >> 8));
+ 	}
+ }
+ 
+ static int sun8i_vi_layer_update_coord(struct sun8i_mixer *mixer, int channel,
+ 				       int overlay, struct drm_plane *plane,
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+

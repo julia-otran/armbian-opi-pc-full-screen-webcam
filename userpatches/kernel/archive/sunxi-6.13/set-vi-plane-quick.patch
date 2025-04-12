@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Doe <john.doe@somewhere.on.planet>
+Date: Tue, 8 Apr 2025 23:52:18 +0000
+Subject: set-vi-plane-quick
+
+Signed-off-by: John Doe <john.doe@somewhere.on.planet>
+---
+ drivers/gpu/drm/sun4i/sun8i_vi_layer.c | 34 +++++++---
+ 1 file changed, 26 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+index 5c8c81da7b2c..1294fe9cadb9 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
++++ b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+@@ -360,22 +360,32 @@ static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
+ 	struct drm_plane_state *new_state = drm_atomic_get_new_plane_state(state,
+ 									   plane);
+ 	struct sun8i_layer *layer = plane_to_sun8i_layer(plane);
+ 	unsigned int zpos = new_state->normalized_zpos;
+ 	struct sun8i_mixer *mixer = layer->mixer;
+-	struct drm_framebuffer *fb = plane->state->fb;
+-	bool afbc = drm_is_afbc(fb->modifier);
+ 
+ 	if (!new_state->crtc || !new_state->visible) {
+ 		if (mixer->cfg->de_type >= sun8i_mixer_de3)
+ 			sun50i_afbc_disable(mixer, layer->channel);
+ 		return;
+ 	}
+ 
++	struct drm_framebuffer *fb = plane->state->fb;
++	bool afbc = drm_is_afbc(fb->modifier);
++
++	struct drm_plane_state *old_state = drm_atomic_get_old_plane_state(state,
++									   plane);
++
+ 	sun8i_vi_layer_update_coord(mixer, layer->channel,
+ 				    layer->overlay, plane, zpos, afbc);
+ 
++	bool was_enabled = old_state->crtc && old_state->visible;
++	unsigned int old_zpos = old_state->normalized_zpos;
++	bool update_formats = !was_enabled || old_state->fb->format->format != new_state->fb->format->format;
++	bool update_buffer = !was_enabled || old_state->fb != new_state->fb;
++	bool update_alpha = !was_enabled || old_state->alpha != new_state->alpha;
++	
+ 	if (afbc) {
+ 		u32 fmt_type;
+ 
+ 		sun8i_vi_layer_prepare_non_linear(mixer, layer->channel,
+ 						  layer->overlay);
+@@ -384,16 +394,24 @@ static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
+ 		fmt_type = sun8i_vi_layer_get_format_type(fb->format);
+ 		sun8i_csc_set_ccsc(mixer, layer->channel, fmt_type,
+ 				   plane->state->color_encoding,
+ 				   plane->state->color_range);
+ 	} else {
+-		sun8i_vi_layer_update_formats(mixer, layer->channel,
+-					      layer->overlay, plane);
+-		sun8i_vi_layer_update_buffer(mixer, layer->channel,
+-					     layer->overlay, plane);
+-		sun8i_vi_layer_update_alpha(mixer, layer->channel,
+-					    layer->overlay, plane);
++		if (update_formats) {
++			sun8i_vi_layer_update_formats(mixer, layer->channel,
++						      layer->overlay, plane);
++		}
++
++		if (update_buffer) {
++			sun8i_vi_layer_update_buffer(mixer, layer->channel,
++						     layer->overlay, plane);
++		}
++
++		if (update_alpha) {
++			sun8i_vi_layer_update_alpha(mixer, layer->channel,
++						    layer->overlay, plane);
++		}
+ 	}
+ }
+ 
+ static bool sun8i_vi_layer_format_mod_supported(struct drm_plane *plane,
+ 						u32 format, u64 modifier)
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+

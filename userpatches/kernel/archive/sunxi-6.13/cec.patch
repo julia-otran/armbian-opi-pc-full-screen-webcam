@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Doe <john.doe@somewhere.on.planet>
+Date: Sat, 5 Apr 2025 04:25:59 +0000
+Subject: Add HDMI CEC no reply mode
+
+Signed-off-by: John Doe <john.doe@somewhere.on.planet>
+---
+ drivers/media/cec/core/cec-adap.c | 4 ++++
+ drivers/media/cec/core/cec-api.c  | 5 ++++-
+ include/media/cec.h               | 2 ++
+ include/uapi/linux/cec.h          | 2 ++
+ 4 files changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/media/cec/core/cec-adap.c b/drivers/media/cec/core/cec-adap.c
+index c7d36010c890..5bd70de9a3ca 100644
+--- a/drivers/media/cec/core/cec-adap.c
++++ b/drivers/media/cec/core/cec-adap.c
+@@ -2045,10 +2045,14 @@ static int cec_receive_notify(struct cec_adapter *adap, struct cec_msg *msg,
+ 	/* Allow drivers to process the message first */
+ 	if (adap->ops->received && !adap->devnode.unregistered &&
+ 	    adap->ops->received(adap, msg) != -ENOMSG)
+ 		return 0;
+ 
++	if (adap->prevent_reply && msg->msg[1] != CEC_MSG_REPORT_PHYSICAL_ADDR) {
++		goto skip_processing;
++	}
++
+ 	/*
+ 	 * REPORT_PHYSICAL_ADDR, CEC_MSG_USER_CONTROL_PRESSED and
+ 	 * CEC_MSG_USER_CONTROL_RELEASED messages always have to be
+ 	 * handled by the CEC core, even if the passthrough mode is on.
+ 	 * The others are just ignored if passthrough mode is on.
+diff --git a/drivers/media/cec/core/cec-api.c b/drivers/media/cec/core/cec-api.c
+index c50299246fc4..e9e294f2c5d5 100644
+--- a/drivers/media/cec/core/cec-api.c
++++ b/drivers/media/cec/core/cec-api.c
+@@ -374,15 +374,18 @@ static long cec_s_mode(struct cec_adapter *adap, struct cec_fh *fh,
+ 	bool send_pin_event = false;
+ 	long err = 0;
+ 
+ 	if (copy_from_user(&mode, parg, sizeof(mode)))
+ 		return -EFAULT;
+-	if (mode & ~(CEC_MODE_INITIATOR_MSK | CEC_MODE_FOLLOWER_MSK)) {
++
++	if (mode & ~(CEC_MODE_INITIATOR_MSK | CEC_MODE_FOLLOWER_MSK | CEC_MODE_PREVENT_REPLY)) {
+ 		dprintk(1, "%s: invalid mode bits set\n", __func__);
+ 		return -EINVAL;
+ 	}
+ 
++	adap->prevent_reply = mode & CEC_MODE_PREVENT_REPLY;
++
+ 	mode_initiator = mode & CEC_MODE_INITIATOR_MSK;
+ 	mode_follower = mode & CEC_MODE_FOLLOWER_MSK;
+ 
+ 	if (mode_initiator > CEC_MODE_EXCL_INITIATOR ||
+ 	    mode_follower > CEC_MODE_MONITOR_ALL) {
+diff --git a/include/media/cec.h b/include/media/cec.h
+index 16b412b3131b..e6e25c83fe16 100644
+--- a/include/media/cec.h
++++ b/include/media/cec.h
+@@ -294,10 +294,12 @@ struct cec_adapter {
+ 	struct dentry *cec_dir;
+ 
+ 	u32 sequence;
+ 
+ 	char input_phys[40];
++
++	bool prevent_reply;
+ };
+ 
+ static inline int cec_get_device(struct cec_adapter *adap)
+ {
+ 	struct cec_devnode *devnode = &adap->devnode;
+diff --git a/include/uapi/linux/cec.h b/include/uapi/linux/cec.h
+index b2af1dddd4d7..a68bf80958e2 100644
+--- a/include/uapi/linux/cec.h
++++ b/include/uapi/linux/cec.h
+@@ -322,10 +322,12 @@ static inline int cec_is_unconfigured(__u16 log_addr_mask)
+ #define CEC_MODE_MONITOR_PIN		(0xd << 4)
+ #define CEC_MODE_MONITOR		(0xe << 4)
+ #define CEC_MODE_MONITOR_ALL		(0xf << 4)
+ #define CEC_MODE_FOLLOWER_MSK		0xf0
+ 
++#define CEC_MODE_PREVENT_REPLY		0x100
++
+ /* Userspace has to configure the physical address */
+ #define CEC_CAP_PHYS_ADDR	(1 << 0)
+ /* Userspace has to configure the logical addresses */
+ #define CEC_CAP_LOG_ADDRS	(1 << 1)
+ /* Userspace can transmit messages (and thus become follower as well) */
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+

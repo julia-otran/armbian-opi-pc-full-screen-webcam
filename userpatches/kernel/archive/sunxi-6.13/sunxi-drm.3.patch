@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Doe <john.doe@somewhere.on.planet>
+Date: Sun, 18 Feb 2024 23:47:06 +0000
+Subject: Patching kernel sunxi files include/uapi/drm/sun4i_drm.h
+
+Signed-off-by: John Doe <john.doe@somewhere.on.planet>
+---
+ include/uapi/drm/sun4i_drm.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/uapi/drm/sun4i_drm.h b/include/uapi/drm/sun4i_drm.h
+index 954a34a866e9..eb9d314893ef 100644
+--- a/include/uapi/drm/sun4i_drm.h
++++ b/include/uapi/drm/sun4i_drm.h
+@@ -8,12 +8,12 @@
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  */
+ 
+-#ifndef _UAPI_SUN4I_DRM_H_
+-#define _UAPI_SUN4I_DRM_H_
++#ifndef __SUN4I_DRM_H__
++#define __SUN4I_DRM_H__
+ 
+ #include "drm.h"
+ 
+ struct drm_sun4i_gem_create {
+ 	__u64 size;
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+

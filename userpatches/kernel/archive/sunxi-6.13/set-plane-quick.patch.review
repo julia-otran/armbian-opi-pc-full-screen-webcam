@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Doe <john.doe@somewhere.on.planet>
+Date: Thu, 15 Feb 2024 05:27:25 +0000
+Subject: Fast video layer atomic update
+
+Signed-off-by: John Doe <john.doe@somewhere.on.planet>
+---
+ drivers/gpu/drm/sun4i/sun8i_vi_layer.c | 48 +++++++++-
+ 1 file changed, 47 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+index ebea921f6e7e..f47b24e60b8c 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
++++ b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+@@ -357,12 +357,59 @@ static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
+ 									   plane);
+ 	struct sun8i_layer *layer = plane_to_sun8i_layer(plane);
+ 	unsigned int zpos = new_state->normalized_zpos;
+ 	struct sun8i_mixer *mixer = layer->mixer;
+ 
+-	if (!new_state->crtc || !new_state->visible)
++	bool enabled = new_state->crtc && new_state->visible;
++
++	if (!enabled)
++		return;
++
++	struct drm_plane_state *old_state = drm_atomic_get_old_plane_state(state,
++									   plane);
++
++	bool was_enabled = old_state->crtc && old_state->visible;
++	unsigned int old_zpos = old_state->normalized_zpos;
++
++	if (was_enabled && enabled) {
++		bool coord_changed =
++			zpos != old_zpos ||
++			old_state->src.x1 != new_state->src.x1 ||
++			old_state->src.x2 != new_state->src.x2 ||
++			old_state->src.y1 != new_state->src.y1 ||
++			old_state->src.y2 != new_state->src.y2 ||
++			old_state->dst.x1 != new_state->dst.x1 ||
++			old_state->dst.x2 != new_state->dst.x2 ||
++			old_state->dst.y1 != new_state->dst.y1 ||
++			old_state->dst.y2 != new_state->dst.y2 ||
++			old_state->crtc_x  != new_state->crtc_x ||
++			old_state->crtc_y  != new_state->crtc_y ||
++			old_state->crtc_w  != new_state->crtc_w ||
++			old_state->crtc_h  != new_state->crtc_h;
++
++		if (coord_changed) {
++			sun8i_vi_layer_update_coord(mixer, layer->channel,
++						layer->overlay, plane, zpos);
++		}
++
++		if (old_state->fb->format->format != new_state->fb->format->format) {
++			sun8i_vi_layer_update_formats(mixer, layer->channel,
++						layer->overlay, plane);
++		}
++
++		if (old_state->fb != new_state->fb) {
++			sun8i_vi_layer_update_buffer(mixer, layer->channel,
++						layer->overlay, plane);
++		}
++
++		if (old_state->alpha != new_state->alpha) {
++			sun8i_vi_layer_update_alpha(mixer, layer->channel,
++						layer->overlay, plane);
++		}
++
+ 		return;
++ 	}
+ 
+ 	sun8i_vi_layer_update_coord(mixer, layer->channel,
+ 				    layer->overlay, plane, zpos);
+ 	sun8i_vi_layer_update_formats(mixer, layer->channel,
+ 				      layer->overlay, plane);
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+

@@ -1,0 +1,489 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Doe <john.doe@somewhere.on.planet>
+Date: Mon, 7 Apr 2025 00:25:40 +0000
+Subject: Enable TV on sun8i-h3
+
+Signed-off-by: John Doe <john.doe@somewhere.on.planet>
+---
+ arch/arm/boot/dts/allwinner/sun8i-h3.dtsi    | 22 +++
+ arch/arm/boot/dts/allwinner/sunxi-h3-h5.dtsi | 95 +++++++++-
+ drivers/clk/sunxi-ng/ccu-sun8i-h3.c          | 17 +-
+ drivers/gpu/drm/sun4i/Makefile               |  3 +-
+ drivers/gpu/drm/sun4i/sun4i_tv.c             | 40 +++-
+ drivers/gpu/drm/sun4i/sun8i_mixer.c          | 29 ++-
+ drivers/gpu/drm/sun4i/sun8i_mixer.h          |  5 +-
+ 7 files changed, 200 insertions(+), 11 deletions(-)
+
+diff --git a/arch/arm/boot/dts/allwinner/sun8i-h3.dtsi b/arch/arm/boot/dts/allwinner/sun8i-h3.dtsi
+index afd367cf7137..86787497b394 100644
+--- a/arch/arm/boot/dts/allwinner/sun8i-h3.dtsi
++++ b/arch/arm/boot/dts/allwinner/sun8i-h3.dtsi
+@@ -318,10 +318,24 @@ ths: thermal-sensor@1c25000 {
+ 			clock-names = "bus", "mod";
+ 			nvmem-cells = <&ths_calibration>;
+ 			nvmem-cell-names = "calibration";
+ 			#thermal-sensor-cells = <0>;
+ 		};
++
++		tve: tv-encoder@1e00000 {
++			compatible = "allwinner,sun8i-h3-tv-encoder";
++			reg = <0x01e00000 0x1000>;
++			clocks = <&ccu CLK_BUS_TVE>;
++			resets = <&ccu RST_BUS_TVE>;
++			status = "ok";
++
++			port {
++				tve_in_tcon1: endpoint {
++					remote-endpoint = <&tcon1_out_tve>;
++				};
++			};
++		};
+ 	};
+ 
+ 	thermal-zones {
+ 		cpu_thermal {
+ 			/* milliseconds */
+@@ -407,10 +421,14 @@ &display_clocks {
+ 
+ &mbus {
+ 	compatible = "allwinner,sun8i-h3-mbus";
+ };
+ 
++&mixer1 {
++	resets = <&display_clocks RST_WB>;
++};
++
+ &mmc0 {
+ 	compatible = "allwinner,sun7i-a20-mmc";
+ 	clocks = <&ccu CLK_BUS_MMC0>,
+ 		 <&ccu CLK_MMC0>,
+ 		 <&ccu CLK_MMC0_OUTPUT>,
+@@ -454,5 +472,9 @@ &rtc {
+ };
+ 
+ &sid {
+ 	compatible = "allwinner,sun8i-h3-sid";
+ };
++
++&tcon1_out_tve {
++	remote-endpoint = <&tve_in_tcon1>;
++};
+diff --git a/arch/arm/boot/dts/allwinner/sunxi-h3-h5.dtsi b/arch/arm/boot/dts/allwinner/sunxi-h3-h5.dtsi
+index 4137aee6568b..cd67ca76b5e8 100644
+--- a/arch/arm/boot/dts/allwinner/sunxi-h3-h5.dtsi
++++ b/arch/arm/boot/dts/allwinner/sunxi-h3-h5.dtsi
+@@ -114,11 +114,11 @@ cpu {
+ 		};
+ 	};
+ 
+ 	de: display-engine {
+ 		compatible = "allwinner,sun8i-h3-display-engine";
+-		allwinner,pipelines = <&mixer0>;
++		allwinner,pipelines = <&mixer0>, <&mixer1>;
+ 		status = "disabled";
+ 	};
+ 
+ 	scpi_protocol: scpi {
+ 		compatible = "arm,scpi";
+@@ -158,15 +158,54 @@ mixer0: mixer@1100000 {
+ 			ports {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 
+ 				mixer0_out: port@1 {
++					#address-cells = <1>;
++					#size-cells = <0>;
+ 					reg = <1>;
+ 
+-					mixer0_out_tcon0: endpoint {
++					mixer0_out_tcon0: endpoint@0 {
++						reg = <0>;
+ 						remote-endpoint = <&tcon0_in_mixer0>;
+ 					};
++
++					mixer0_out_tcon1: endpoint@1 {
++						reg = <1>;
++						remote-endpoint = <&tcon1_in_mixer0>;
++					};
++				};
++			};
++		};
++
++		mixer1: mixer@1200000 {
++			compatible = "allwinner,sun8i-h3-de2-mixer-1";
++			reg = <0x01200000 0x100000>;
++			clocks = <&display_clocks CLK_BUS_MIXER1>,
++				 <&display_clocks CLK_MIXER1>;
++			clock-names = "bus",
++				      "mod";
++			/* reset is added by SoC dtsi */
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				mixer1_out: port@1 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <1>;
++
++					mixer1_out_tcon0: endpoint@0 {
++						reg = <0>;
++						remote-endpoint = <&tcon0_in_mixer1>;
++					};
++
++					mixer1_out_tcon1: endpoint@1 {
++						reg = <1>;
++						remote-endpoint = <&tcon1_in_mixer1>;
++					};
+ 				};
+ 			};
+ 		};
+ 
+ 		dma: dma-controller@1c02000 {
+@@ -191,15 +230,23 @@ tcon0: lcd-controller@1c0c000 {
+ 			ports {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 
+ 				tcon0_in: port@0 {
++					#address-cells = <1>;
++					#size-cells = <0>;
+ 					reg = <0>;
+ 
+-					tcon0_in_mixer0: endpoint {
++					tcon0_in_mixer0: endpoint@0 {
++						reg = <0>;
+ 						remote-endpoint = <&mixer0_out_tcon0>;
+ 					};
++					tcon0_in_mixer1: endpoint@1 {
++						reg = <1>;
++						remote-endpoint = <&mixer1_out_tcon0>;
++					};
++
+ 				};
+ 
+ 				tcon0_out: port@1 {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+@@ -211,10 +258,52 @@ tcon0_out_hdmi: endpoint@1 {
+ 					};
+ 				};
+ 			};
+ 		};
+ 
++		tcon1: lcd-controller@1c0d000 {
++			compatible = "allwinner,sun8i-h3-tcon-tv",
++				     "allwinner,sun8i-a83t-tcon-tv";
++			reg = <0x01c0d000 0x1000>;
++			interrupts = <GIC_SPI 87 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_TCON1>, <&ccu CLK_TVE>;
++			clock-names = "ahb", "tcon-ch1";
++			resets = <&ccu RST_BUS_TCON1>;
++			reset-names = "lcd";
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				tcon1_in: port@0 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <0>;
++
++					tcon1_in_mixer0: endpoint@0 {
++						reg = <0>;
++						remote-endpoint = <&mixer0_out_tcon1>;
++					};
++
++					tcon1_in_mixer1: endpoint@1 {
++						reg = <1>;
++						remote-endpoint = <&mixer1_out_tcon1>;
++					};
++				};
++
++				tcon1_out: port@1 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <1>;
++
++					tcon1_out_tve: endpoint@1 {
++						reg = <1>;
++					};
++				};
++			};
++		};
++
+ 		mmc0: mmc@1c0f000 {
+ 			/* compatible and clocks are in per SoC .dtsi file */
+ 			reg = <0x01c0f000 0x1000>;
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&mmc0_pins>;
+diff --git a/drivers/clk/sunxi-ng/ccu-sun8i-h3.c b/drivers/clk/sunxi-ng/ccu-sun8i-h3.c
+index 9bd05a0488ff..920da163026f 100644
+--- a/drivers/clk/sunxi-ng/ccu-sun8i-h3.c
++++ b/drivers/clk/sunxi-ng/ccu-sun8i-h3.c
+@@ -467,12 +467,25 @@ static const char * const tcon_parents[] = { "pll-video" };
+ static SUNXI_CCU_M_WITH_MUX_GATE(tcon_clk, "tcon", tcon_parents,
+ 				 0x118, 0, 4, 24, 3, BIT(31),
+ 				 CLK_SET_RATE_PARENT);
+ 
+ static const char * const tve_parents[] = { "pll-de", "pll-periph1" };
+-static SUNXI_CCU_M_WITH_MUX_GATE(tve_clk, "tve", tve_parents,
+-				 0x120, 0, 4, 24, 3, BIT(31), 0);
++// static SUNXI_CCU_M_WITH_MUX_GATE(tve_clk, "tve", tve_parents,
++//				 0x120, 0, 4, 24, 3, BIT(31), 0);
++
++struct ccu_div tve_clk = {
++	.enable	= BIT(31),
++	.div	= _SUNXI_CCU_DIV(0, 4),
++	.mux	= _SUNXI_CCU_MUX(24, 3),
++	.fixed_post_div = 16,
++	.common	= {
++		.reg		= 0x120,
++		.features	= CCU_FEATURE_FIXED_POSTDIV,
++		.hw.init	= CLK_HW_INIT_PARENTS("tve", tve_parents,
++						      &ccu_div_ops, 0),
++	},
++};
+ 
+ static const char * const deinterlace_parents[] = { "pll-periph0", "pll-periph1" };
+ static SUNXI_CCU_M_WITH_MUX_GATE(deinterlace_clk, "deinterlace", deinterlace_parents,
+ 				 0x124, 0, 4, 24, 3, BIT(31), 0);
+ 
+diff --git a/drivers/gpu/drm/sun4i/Makefile b/drivers/gpu/drm/sun4i/Makefile
+index 8ffddaa3e069..a33f7df9d165 100644
+--- a/drivers/gpu/drm/sun4i/Makefile
++++ b/drivers/gpu/drm/sun4i/Makefile
+@@ -18,11 +18,12 @@ sun8i-drm-hdmi-y		+= sun8i_hdmi_phy.o
+ sun8i-drm-hdmi-y		+= sun8i_hdmi_phy_clk.o
+ 
+ sun8i-mixer-y			+= sun8i_mixer.o sun8i_ui_layer.o \
+ 				   sun8i_vi_layer.o sun8i_ui_scaler.o \
+ 				   sun8i_vi_scaler.o sun8i_csc.o \
+-				   sun50i_fmt.o sun50i_afbc.o
++				   sun50i_fmt.o sun50i_afbc.o \
++				   sun4i_tv.o
+ 
+ sun4i-tcon-y			+= sun4i_crtc.o
+ sun4i-tcon-y			+= sun4i_tcon_dclk.o
+ sun4i-tcon-y			+= sun4i_lvds.o
+ sun4i-tcon-y			+= sun4i_tcon.o
+diff --git a/drivers/gpu/drm/sun4i/sun4i_tv.c b/drivers/gpu/drm/sun4i/sun4i_tv.c
+index cce4e38789b9..dcfa15b8fd6c 100644
+--- a/drivers/gpu/drm/sun4i/sun4i_tv.c
++++ b/drivers/gpu/drm/sun4i/sun4i_tv.c
+@@ -8,10 +8,11 @@
+ 
+ #include <linux/clk.h>
+ #include <linux/component.h>
+ #include <linux/module.h>
+ #include <linux/of_address.h>
++#include <linux/of_device.h>
+ #include <linux/platform_device.h>
+ #include <linux/regmap.h>
+ #include <linux/reset.h>
+ 
+ #include <drm/drm_atomic.h>
+@@ -168,10 +169,15 @@ struct sun4i_tv {
+ 	struct reset_control	*reset;
+ 
+ 	struct sun4i_drv	*drv;
+ };
+ 
++struct sun4i_tv_quirks {
++	unsigned int calibration;
++	unsigned int unknown : 1;
++};
++
+ static const struct video_levels ntsc_video_levels = {
+ 	.black = 282,	.blank = 240,
+ };
+ 
+ static const struct video_levels pal_video_levels = {
+@@ -417,24 +423,30 @@ static const struct drm_connector_funcs sun4i_tv_comp_connector_funcs = {
+ 
+ static const struct regmap_config sun4i_tv_regmap_config = {
+ 	.reg_bits	= 32,
+ 	.val_bits	= 32,
+ 	.reg_stride	= 4,
+-	.max_register	= SUN4I_TVE_WSS_DATA2_REG,
++	.max_register	= 0x400,
+ 	.name		= "tv-encoder",
+ };
+ 
+ static int sun4i_tv_bind(struct device *dev, struct device *master,
+ 			 void *data)
+ {
+ 	struct platform_device *pdev = to_platform_device(dev);
+ 	struct drm_device *drm = data;
+ 	struct sun4i_drv *drv = drm->dev_private;
+ 	struct sun4i_tv *tv;
++	const struct sun4i_tv_quirks *quirks;
+ 	void __iomem *regs;
+ 	int ret;
+ 
++	quirks = of_device_get_match_data(dev);
++
++	if (!quirks)
++		return -EINVAL;
++
+ 	tv = devm_kzalloc(dev, sizeof(*tv), GFP_KERNEL);
+ 	if (!tv)
+ 		return -ENOMEM;
+ 	tv->drv = drv;
+ 	dev_set_drvdata(dev, tv);
+@@ -470,10 +482,16 @@ static int sun4i_tv_bind(struct device *dev, struct device *master,
+ 		ret = PTR_ERR(tv->clk);
+ 		goto err_assert_reset;
+ 	}
+ 	clk_prepare_enable(tv->clk);
+ 
++	if (quirks->calibration)
++		regmap_write(tv->regs, 0x304, quirks->calibration);
++
++	if (quirks->unknown)
++		regmap_write(tv->regs, 0x30c, 0x00101110);
++
+ 	drm_encoder_helper_add(&tv->encoder,
+ 			       &sun4i_tv_helper_funcs);
+ 	ret = drm_simple_encoder_init(drm, &tv->encoder,
+ 				      DRM_MODE_ENCODER_TVDAC);
+ 	if (ret) {
+@@ -549,14 +567,30 @@ static int sun4i_tv_probe(struct platform_device *pdev)
+ static void sun4i_tv_remove(struct platform_device *pdev)
+ {
+ 	component_del(&pdev->dev, &sun4i_tv_ops);
+ }
+ 
++static const struct sun4i_tv_quirks a10_quirks = {
++};
++
++static const struct sun4i_tv_quirks h3_quirks = {
++	.calibration = 0x02000c00,
++};
++
++static const struct sun4i_tv_quirks h5_quirks = {
++	.calibration = 0x02850000,
++	.unknown = 1,
++};
++
++
+ static const struct of_device_id sun4i_tv_of_table[] = {
+-	{ .compatible = "allwinner,sun4i-a10-tv-encoder" },
+-	{ }
++	{ .compatible = "allwinner,sun4i-a10-tv-encoder", .data = &a10_quirks },
++	{ .compatible = "allwinner,sun8i-h3-tv-encoder", .data = &h3_quirks },
++	{ .compatible = "allwinner,sun50i-h5-tv-encoder", .data = &h5_quirks },
++ 	{ }
+ };
++
+ MODULE_DEVICE_TABLE(of, sun4i_tv_of_table);
+ 
+ static struct platform_driver sun4i_tv_platform_driver = {
+ 	.probe		= sun4i_tv_probe,
+ 	.remove		= sun4i_tv_remove,
+diff --git a/drivers/gpu/drm/sun4i/sun8i_mixer.c b/drivers/gpu/drm/sun4i/sun8i_mixer.c
+index b8bd520a9292..292bd7638e00 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_mixer.c
++++ b/drivers/gpu/drm/sun4i/sun8i_mixer.c
+@@ -35,10 +35,16 @@
+ struct de2_fmt_info {
+ 	u32	drm_fmt;
+ 	u32	de2_fmt;
+ };
+ 
++static const u32 sun8i_rgb2yuv_coef[12] = {
++	0x00000107, 0x00000204, 0x00000064, 0x00004200,
++	0x00001f68, 0x00001ed6, 0x000001c2, 0x00020200,
++	0x000001c2, 0x00001e87, 0x00001fb7, 0x00020200,
++};
++
+ static const struct de2_fmt_info de2_formats[] = {
+ 	{
+ 		.drm_fmt = DRM_FORMAT_ARGB8888,
+ 		.de2_fmt = SUN8I_MIXER_FBFMT_ARGB8888,
+ 	},
+@@ -443,15 +449,35 @@ static u32 *sun8i_mixer_get_supported_fmts(struct sunxi_engine *engine, u32 *num
+ 	*num = count;
+ 
+ 	return formats;
+ }
+ 
++static void sun8i_mixer_apply_color_correction(struct sunxi_engine *engine)
++{
++	DRM_DEBUG_DRIVER("Applying RGB to YUV color correction\n");
++
++	regmap_bulk_write(engine->regs, SUN8I_MIXER_DCSC_COEF_REG(0),
++			  sun8i_rgb2yuv_coef, 12);
++	regmap_write(engine->regs, SUN8I_MIXER_DCSC_EN, 1);
++}
++
++static void sun8i_mixer_disable_color_correction(struct sunxi_engine *engine)
++{
++	DRM_DEBUG_DRIVER("Disabling color correction\n");
++
++	/* Disable color correction */
++	regmap_write(engine->regs, SUN8I_MIXER_DCSC_EN, 0);
++}
++
++
+ static const struct sunxi_engine_ops sun8i_engine_ops = {
+ 	.commit			= sun8i_mixer_commit,
+ 	.layers_init		= sun8i_layers_init,
+ 	.mode_set		= sun8i_mixer_mode_set,
+ 	.get_supported_fmts	= sun8i_mixer_get_supported_fmts,
++	.apply_color_correction	= sun8i_mixer_apply_color_correction,
++	.disable_color_correction = sun8i_mixer_disable_color_correction,
+ };
+ 
+ static const struct regmap_config sun8i_mixer_regmap_config = {
+ 	.name		= "layers",
+ 	.reg_bits	= 32,
+@@ -771,11 +797,12 @@ static const struct sun8i_mixer_cfg sun8i_h3_mixer0_cfg = {
+ 
+ static const struct sun8i_mixer_cfg sun8i_h3_mixer1_cfg = {
+ 	.ccsc		= CCSC_MIXER1_LAYOUT,
+ 	.mod_rate	= 432000000,
+ 	.scaler_mask	= 0xf,
+-	.ui_num		= 3,
++	.scanline_yuv	= 2048,
++	.ui_num		= 1,
+ 	.vi_num		= 1,
+ };
+ 
+ static const struct sun8i_mixer_cfg sun8i_r40_mixer0_cfg = {
+ 	.ccsc		= CCSC_MIXER0_LAYOUT,
+diff --git a/drivers/gpu/drm/sun4i/sun8i_mixer.h b/drivers/gpu/drm/sun4i/sun8i_mixer.h
+index 26b001164647..f01fc514a7e8 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_mixer.h
++++ b/drivers/gpu/drm/sun4i/sun8i_mixer.h
+@@ -121,21 +121,24 @@
+ #define SUN8I_MIXER_FBFMT_P210_YUV	18
+ /* format 19 is P210 YVU */
+ /* format 20 is packed YVU444 10-bit */
+ /* format 21 is packed YUV444 10-bit */
+ 
++/* The DCSC sub-engine is used to do color space conversation */
++#define SUN8I_MIXER_DCSC_EN			0xb0000
++#define SUN8I_MIXER_DCSC_COEF_REG(x)		(0xb0010 + 0x4 * (x))
++
+ /*
+  * Sub-engines listed bellow are unused for now. The EN registers are here only
+  * to be used to disable these sub-engines.
+  */
+ #define SUN8I_MIXER_FCE_EN			0xa0000
+ #define SUN8I_MIXER_BWS_EN			0xa2000
+ #define SUN8I_MIXER_LTI_EN			0xa4000
+ #define SUN8I_MIXER_PEAK_EN			0xa6000
+ #define SUN8I_MIXER_ASE_EN			0xa8000
+ #define SUN8I_MIXER_FCC_EN			0xaa000
+-#define SUN8I_MIXER_DCSC_EN			0xb0000
+ 
+ #define SUN50I_MIXER_FCE_EN			0x70000
+ #define SUN50I_MIXER_PEAK_EN			0x70800
+ #define SUN50I_MIXER_LCTI_EN			0x71000
+ #define SUN50I_MIXER_BLS_EN			0x71800
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+

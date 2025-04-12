@@ -1,0 +1,104 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Doe <john.doe@somewhere.on.planet>
+Date: Thu, 15 Feb 2024 05:13:18 +0000
+Subject: Fix CVBS video layer
+
+Signed-off-by: John Doe <john.doe@somewhere.on.planet>
+---
+ drivers/gpu/drm/sun4i/sun8i_csc.c      |  2 +-
+ drivers/gpu/drm/sun4i/sun8i_vi_layer.c | 12 ++++++----
+ drivers/gpu/drm/sun4i/sun8i_vi_layer.h |  2 +-
+ 3 files changed, 10 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/gpu/drm/sun4i/sun8i_csc.c b/drivers/gpu/drm/sun4i/sun8i_csc.c
+index 703c55ba788b..4d6d0c37faa6 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_csc.c
++++ b/drivers/gpu/drm/sun4i/sun8i_csc.c
+@@ -228,11 +228,11 @@ static void sun8i_csc_enable(struct regmap *map, u32 base, bool enable)
+ 	if (enable)
+ 		val = SUN8I_CSC_CTRL_EN;
+ 	else
+ 		val = 0;
+ 
+-	regmap_update_bits(map, SUN8I_CSC_CTRL(base), SUN8I_CSC_CTRL_EN, val);
++	regmap_write(map, SUN8I_CSC_CTRL(base), val);
+ }
+ 
+ static void sun8i_de3_ccsc_enable(struct regmap *map, int layer, bool enable)
+ {
+ 	u32 val, mask;
+diff --git a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+index dca22df8c748..ebea921f6e7e 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
++++ b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+@@ -38,13 +38,12 @@ static void sun8i_vi_layer_update_alpha(struct sun8i_mixer *mixer, int channel,
+ 		regmap_update_bits(mixer->engine.regs,
+ 				   SUN8I_MIXER_CHAN_VI_LAYER_ATTR(ch_base,
+ 								  overlay),
+ 				   mask, val);
+ 	} else if (mixer->cfg->vi_num == 1) {
+-		regmap_update_bits(mixer->engine.regs,
++		regmap_write(mixer->engine.regs,
+ 				   SUN8I_MIXER_FCC_GLOBAL_ALPHA_REG,
+-				   SUN8I_MIXER_FCC_GLOBAL_ALPHA_MASK,
+ 				   SUN8I_MIXER_FCC_GLOBAL_ALPHA
+ 					(plane->state->alpha >> 8));
+ 	}
+ }
+ 
+@@ -190,10 +189,15 @@ static int sun8i_vi_layer_update_coord(struct sun8i_mixer *mixer, int channel,
+ 		     SUN8I_MIXER_COORD(state->dst.x1, state->dst.y1));
+ 	regmap_write(bld_regs,
+ 		     SUN8I_MIXER_BLEND_ATTR_INSIZE(bld_base, zpos),
+ 		     outsize);
+ 
++	/* Set FCC Coordinates */
++	regmap_write(mixer->engine.regs, 0xAA004, outsize);
++	regmap_write(mixer->engine.regs, 0xAA008, 0);
++	regmap_write(mixer->engine.regs, 0xAA00c, outsize);
++
+ 	return 0;
+ }
+ 
+ static u32 sun8i_vi_layer_get_csc_mode(const struct drm_format_info *format)
+ {
+@@ -358,16 +362,16 @@ static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
+ 	if (!new_state->crtc || !new_state->visible)
+ 		return;
+ 
+ 	sun8i_vi_layer_update_coord(mixer, layer->channel,
+ 				    layer->overlay, plane, zpos);
+-	sun8i_vi_layer_update_alpha(mixer, layer->channel,
+-				    layer->overlay, plane);
+ 	sun8i_vi_layer_update_formats(mixer, layer->channel,
+ 				      layer->overlay, plane);
+ 	sun8i_vi_layer_update_buffer(mixer, layer->channel,
+ 				     layer->overlay, plane);
++	sun8i_vi_layer_update_alpha(mixer, layer->channel,
++				    layer->overlay, plane);
+ }
+ 
+ static const struct drm_plane_helper_funcs sun8i_vi_layer_helper_funcs = {
+ 	.atomic_check	= sun8i_vi_layer_atomic_check,
+ 	.atomic_update	= sun8i_vi_layer_atomic_update,
+diff --git a/drivers/gpu/drm/sun4i/sun8i_vi_layer.h b/drivers/gpu/drm/sun4i/sun8i_vi_layer.h
+index 655440cdc78f..16a594e84135 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_vi_layer.h
++++ b/drivers/gpu/drm/sun4i/sun8i_vi_layer.h
+@@ -30,12 +30,12 @@
+ 		((base) + 0xfc)
+ 
+ #define SUN8I_MIXER_FCC_GLOBAL_ALPHA_REG \
+ 		(0xAA000 + 0x90)
+ 
+-#define SUN8I_MIXER_FCC_GLOBAL_ALPHA(x)			((x) << 24)
+ #define SUN8I_MIXER_FCC_GLOBAL_ALPHA_MASK		GENMASK(31, 24)
++#define SUN8I_MIXER_FCC_GLOBAL_ALPHA(x)			(((x) << 24) & SUN8I_MIXER_FCC_GLOBAL_ALPHA_MASK)
+ 
+ #define SUN8I_MIXER_CHAN_VI_LAYER_ATTR_EN		BIT(0)
+ /* RGB mode should be set for RGB formats and cleared for YCbCr */
+ #define SUN8I_MIXER_CHAN_VI_LAYER_ATTR_RGB_MODE		BIT(15)
+ #define SUN8I_MIXER_CHAN_VI_LAYER_ATTR_FBFMT_OFFSET	8
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+

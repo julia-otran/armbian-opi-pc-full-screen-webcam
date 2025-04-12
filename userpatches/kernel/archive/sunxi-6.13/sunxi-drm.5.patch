@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Doe <john.doe@somewhere.on.planet>
+Date: Fri, 29 Mar 2024 22:23:22 +0000
+Subject: Patching kernel sunxi files usr/include/Makefile
+
+Signed-off-by: John Doe <john.doe@somewhere.on.planet>
+---
+ usr/include/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/usr/include/Makefile b/usr/include/Makefile
+index 07796df0a295..e2499a316ddf 100644
+--- a/usr/include/Makefile
++++ b/usr/include/Makefile
+@@ -23,10 +23,11 @@ override c_flags = $(UAPI_CFLAGS) -Wp,-MMD,$(depfile) -I $(obj) -I $(srctree)/us
+ # Please consider to fix the header first.
+ #
+ # Sorted alphabetically.
+ no-header-test += asm/ucontext.h
+ no-header-test += drm/vmwgfx_drm.h
++no-header-test += drm/sun4i_drm.h
+ no-header-test += linux/am437x-vpfe.h
+ no-header-test += linux/coda.h
+ no-header-test += linux/cyclades.h
+ no-header-test += linux/errqueue.h
+ no-header-test += linux/hdlc/ioctl.h
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+

@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: John Doe <john.doe@somewhere.on.planet>
+Date: Sat, 5 Apr 2025 04:36:23 +0000
+Subject: Fix sun4i CVBS Video Layer
+
+Signed-off-by: John Doe <john.doe@somewhere.on.planet>
+---
+ drivers/gpu/drm/sun4i/sun8i_vi_layer.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+index 84f8917e2dd8..3cbce3b1bec1 100644
+--- a/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
++++ b/drivers/gpu/drm/sun4i/sun8i_vi_layer.c
+@@ -191,10 +191,15 @@ static int sun8i_vi_layer_update_coord(struct sun8i_mixer *mixer, int channel,
+ 		     SUN8I_MIXER_COORD(state->dst.x1, state->dst.y1));
+ 	regmap_write(bld_regs,
+ 		     SUN8I_MIXER_BLEND_ATTR_INSIZE(bld_base, zpos),
+ 		     outsize);
+ 
++	/* Set FCC Coordinates */
++	regmap_write(mixer->engine.regs, 0xAA004, outsize);
++	regmap_write(mixer->engine.regs, 0xAA008, 0);
++	regmap_write(mixer->engine.regs, 0xAA00c, outsize);
++
+ 	return 0;
+ }
+ 
+ static u32 sun8i_vi_layer_get_format_type(const struct drm_format_info *format)
+ {
+@@ -381,16 +386,16 @@ static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
+ 		fmt_type = sun8i_vi_layer_get_format_type(fb->format);
+ 		sun8i_csc_set_ccsc(mixer, layer->channel, fmt_type,
+ 				   plane->state->color_encoding,
+ 				   plane->state->color_range);
+ 	} else {
+-		sun8i_vi_layer_update_alpha(mixer, layer->channel,
+-					    layer->overlay, plane);
+ 		sun8i_vi_layer_update_formats(mixer, layer->channel,
+ 					      layer->overlay, plane);
+ 		sun8i_vi_layer_update_buffer(mixer, layer->channel,
+ 					     layer->overlay, plane);
++		sun8i_vi_layer_update_alpha(mixer, layer->channel,
++					    layer->overlay, plane);
+ 	}
+ }
+ 
+ static bool sun8i_vi_layer_format_mod_supported(struct drm_plane *plane,
+ 						u32 format, u64 modifier)
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+
