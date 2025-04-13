@@ -74,7 +74,7 @@ Main() {
 
 	sed -i '/console=/d' /boot/armbianEnv.txt
 	echo 'console=ttyS0,115200' >> /boot/armbianEnv.txt
-	echo 'options uvcvideo quirks=0x880' > /etc/modprobe.d/uvcvideo.conf'
+	echo 'options uvcvideo quirks=0x880' > /etc/modprobe.d/uvcvideo.conf
 }
 
 Main "$0"
