@@ -52,7 +52,7 @@ server {
 		root /var/www/html;
 	}
 
-        location /guvcview/ctrl.json {
+        location /camview/ctrl.json {
                 client_body_temp_path /tmp/incoming;
                 client_body_buffer_size 128k;
                 client_max_body_size 512k;

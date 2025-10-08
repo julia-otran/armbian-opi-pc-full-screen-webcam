@@ -36,15 +36,12 @@ Main() {
 
 	chown webcam:webcam /home/webcam
 
-	cp -R /tmp/overlay/guvcview /home/webcam
+	cp -R /tmp/overlay/camview /home/webcam
 
-	cd /home/webcam/guvcview
+	cd /home/webcam/camview
 
-	./bootstrap.sh
 	make
 	make install
-
-	mkdir -p /home/webcam/.config/guvcview2
 
 	chown -R webcam:webcam /home/webcam
 
@@ -66,9 +63,9 @@ Main() {
 
 	cp -R /tmp/overlay/remote-ctl/build/. /var/www/html
 
-	mkdir -p /var/www/guvcview
-	chown www-data:www-data /var/www/guvcview
-	chmod 770 /var/www/guvcview
+	mkdir -p /var/www/camview
+	chown www-data:www-data /var/www/camview
+	chmod 770 /var/www/camview
 
 	rm /root/.not_logged_in_yet
 
