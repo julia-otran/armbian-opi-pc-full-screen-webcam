@@ -5,29 +5,32 @@ Subject: Create sun4i DRM FCC settings api
 
 Signed-off-by: John Doe <john.doe@somewhere.on.planet>
 ---
- drivers/gpu/drm/sun4i/sun4i_drv.c | 17 +++
- drivers/gpu/drm/sun4i/sun8i_csc.c | 63 +++++++++-
- drivers/gpu/drm/sun4i/sun8i_csc.h | 34 +++++
- include/uapi/drm/sun4i_drm.h      | 36 ++++++
- 4 files changed, 149 insertions(+), 1 deletion(-)
+ drivers/gpu/drm/sun4i/sun4i_drv.c    | 17 +++
+ drivers/gpu/drm/sun4i/sun8i_csc.c    | 63 +++++++++-
+ drivers/gpu/drm/sun4i/sun8i_csc.h    | 34 +++++
+ include/uapi/drm/sun4i_drm.h         | 36 ++++++
+ drivers/gpu/drm/sun4i/sunxi_engine.h | 1 +
+ 5 files changed, 150 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/gpu/drm/sun4i/sun4i_drv.c b/drivers/gpu/drm/sun4i/sun4i_drv.c
 index 1eb6b24016bd..c92fd5589861 100644
 --- a/drivers/gpu/drm/sun4i/sun4i_drv.c
 +++ b/drivers/gpu/drm/sun4i/sun4i_drv.c
-@@ -29,10 +29,11 @@
+@@ -29,10 +29,13 @@
  
  #include "sun4i_drv.h"
  #include "sun4i_frontend.h"
  #include "sun4i_framebuffer.h"
  #include "sun4i_tcon.h"
++#include <linux/list.h>
 +#include "sun8i_csc.h"
++#include "sunxi_engine.h"
  #include "sun8i_tcon_top.h"
  
  static int drm_sun4i_gem_dumb_create(struct drm_file *file_priv,
  				     struct drm_device *drm,
  				     struct drm_mode_create_dumb *args)
-@@ -59,13 +60,29 @@ static int sun4i_gem_create_ioctl(struct drm_device *drm, void *data,
+@@ -59,13 +60,31 @@ static int sun4i_gem_create_ioctl(struct drm_device *drm, void *data,
  						 &args->handle);
  
  	return PTR_ERR_OR_ZERO(dma_obj);
@@ -41,7 +44,9 @@ index 1eb6b24016bd..c92fd5589861 100644
 +	struct sunxi_engine *engine;
 +
 +	list_for_each_entry(engine, &drv->engine_list, list) {
-+	    sun8i_csc_set_fcc(engine, args);
++           if (engine->id == 0) {
++	        sun8i_csc_set_fcc(engine, args);
++           }
 +	}
 +
 +	return 0;
@@ -175,14 +180,14 @@ index 2b762cb79f02..ebd89ce8bab5 100644
 +#define SUN8I_FCC_OUTPUT_WIN0_VAL(top, left) ((left & 0xFFF) | ((top & 0xFFF) << 16))
 +
 +#define SUN8I_FCC_OUTPUT_WIN1_REG 0xAA00c
-+#define SUN8I_FCC_OUTPUT_WIN0_VAL(bottom, right) ((right & 0xFFF) | ((bottom & 0xFFF) << 16))
++#define SUN8I_FCC_OUTPUT_WIN1_VAL(bottom, right) ((right & 0xFFF) | ((bottom & 0xFFF) << 16))
 +
 +#define SUN8I_FCC_HUE_RANGE_HR_REG 0xAA010
-+#define SUN8I_FCC_HUE_RANGE_HG_REG 0xAA010
-+#define SUN8I_FCC_HUE_RANGE_HB_REG 0xAA010
-+#define SUN8I_FCC_HUE_RANGE_HC_REG 0xAA010
-+#define SUN8I_FCC_HUE_RANGE_HM_REG 0xAA010
-+#define SUN8I_FCC_HUE_RANGE_HY_REG 0xAA010
++#define SUN8I_FCC_HUE_RANGE_HG_REG 0xAA014
++#define SUN8I_FCC_HUE_RANGE_HB_REG 0xAA018
++#define SUN8I_FCC_HUE_RANGE_HC_REG 0xAA01c
++#define SUN8I_FCC_HUE_RANGE_HM_REG 0xAA020
++#define SUN8I_FCC_HUE_RANGE_HY_REG 0xAA024
 +
 +#define SUN8I_FCC_HUE_RANGE_VALUE(min, max) (((max & 0b11111111111) << 16) | (min & 0b11111111111))
 +
@@ -192,7 +197,7 @@ index 2b762cb79f02..ebd89ce8bab5 100644
 +#define SUN8I_FCC_LOCAL_GAIN_HC_REG 0xAA03c
 +#define SUN8I_FCC_LOCAL_GAIN_HM_REG 0xAA040
 +#define SUN8I_FCC_LOCAL_GAIN_HY_REG 0xAA044
-+#define SUN8I_FCC_LOCAL_GAIN_VALUE(hue_gain, sat_gain) (((hue_gain & 0xFF) << 16) | (sat_gain & 0xFF))
++#define SUN8I_FCC_LOCAL_GAIN_VALUE(hue_gain, sat_gain) (((hue_gain & 0x1FF) << 16) | (sat_gain & 0x1FF))
 +
  enum format_type {
  	FORMAT_TYPE_RGB,
@@ -230,27 +235,27 @@ index f5740b3ff9b3..93c911000ab4 100644
 +	__u16 hb_hue_min;
 +	__u16 hb_hue_max;
 +
-+        __u16 hc_hue_min;
-+        __u16 hc_hue_max;
-+        __u16 hm_hue_min;
-+        __u16 hm_hue_max;
-+        __u16 hy_hue_min;
-+        __u16 hy_hue_max;
++       __u16 hc_hue_min;
++       __u16 hc_hue_max;
++       __u16 hm_hue_min;
++       __u16 hm_hue_max;
++       __u16 hy_hue_min;
++       __u16 hy_hue_max;
 +
-+	__u8 hr_hue_gain;
-+	__u8 hr_sat_gain;
-+	__u8 hg_hue_gain;
-+	__u8 hg_sat_gain;
-+	__u8 hb_hue_gain;
-+	__u8 hb_sat_gain;
++	int hr_hue_gain;
++	int hr_sat_gain;
++	int hg_hue_gain;
++	int hg_sat_gain;
++	int hb_hue_gain;
++	int hb_sat_gain;
 +
-+        __u8 hc_hue_gain;
-+        __u8 hc_sat_gain;
-+        __u8 hm_hue_gain;
-+        __u8 hm_sat_gain;
-+        __u8 hy_hue_gain;
-+        __u8 hy_sat_gain;
-+}
++       int hc_hue_gain;
++       int hc_sat_gain;
++       int hm_hue_gain;
++       int hm_sat_gain;
++       int hy_hue_gain;
++       int hy_sat_gain;
++};
 +
  #define DRM_SUN4I_GEM_CREATE		0x00
 +#define DRM_SUN4I_SET_FCC_PARAMS	0x01
@@ -266,6 +271,22 @@ index f5740b3ff9b3..93c911000ab4 100644
  #endif
  
  #endif
+diff --git a/drivers/gpu/drm/sun4i/sunxi_engine.h b/drivers/gpu/drm/sun4i/sunxi_engine.h
+index ffafc29b3a0c..7ff541a1b0be 100644
+--- a/drivers/gpu/drm/sun4i/sunxi_engine.h
++++ b/drivers/gpu/drm/sun4i/sunxi_engine.h
+@@ -11,10 +11,11 @@
+ struct drm_plane;
+ struct drm_crtc;
+ struct drm_device;
+ struct drm_crtc_state;
+ struct drm_display_mode;
++struct drm_atomic_state;
+ 
+ struct sunxi_engine;
+ 
+ /**
+  * struct sunxi_engine_ops - helper operations for sunXi engines
 -- 
 Created with Armbian build tools https://github.com/armbian/build
 

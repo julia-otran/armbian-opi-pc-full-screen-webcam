@@ -24,7 +24,7 @@ Main() {
 
 	apt update
 
-	apt install -y autoconf autotools-dev make gcc build-essential intltool pkg-config libjson-c-dev libv4l-dev libudev-dev libusb-1.0-0 libusb-1.0-0-dev libdrm-dev libtool libgettextpo0 libgettextpo-dev libglib2.0-dev ufw iproute2 nginx
+	apt install -y make gcc build-essential libjson-c-dev libv4l-dev libdrm-dev ufw iproute2 nginx
 
 	groupadd video
 
