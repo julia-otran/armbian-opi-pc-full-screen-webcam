@@ -14,27 +14,24 @@ Signed-off-by: John Doe <john.doe@somewhere.on.planet>
  6 files changed, 101 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/gpu/drm/sun4i/Makefile b/drivers/gpu/drm/sun4i/Makefile
-old mode 100644
-new mode 100755
 index a33f7df9d165..9aa12f4a763c
 --- a/drivers/gpu/drm/sun4i/Makefile
 +++ b/drivers/gpu/drm/sun4i/Makefile
-@@ -19,11 +19,11 @@ sun8i-drm-hdmi-y		+= sun8i_hdmi_phy_clk.o
+@@ -18,11 +18,12 @@ sun8i-drm-hdmi-y		+= sun8i_hdmi_phy.o
+ sun8i-drm-hdmi-y		+= sun8i_hdmi_phy_clk.o
  
  sun8i-mixer-y			+= sun8i_mixer.o sun8i_ui_layer.o \
  				   sun8i_vi_layer.o sun8i_ui_scaler.o \
  				   sun8i_vi_scaler.o sun8i_csc.o \
- 				   sun50i_fmt.o sun50i_afbc.o \
--				   sun4i_tv.o
-+				   sun4i_tv.o sun8i_bws.o
+-				   sun50i_fmt.o sun50i_afbc.o
++				   sun50i_fmt.o sun50i_afbc.o \
++				   sun8i_bws.o
  
  sun4i-tcon-y			+= sun4i_crtc.o
  sun4i-tcon-y			+= sun4i_tcon_dclk.o
  sun4i-tcon-y			+= sun4i_lvds.o
  sun4i-tcon-y			+= sun4i_tcon.o
 diff --git a/drivers/gpu/drm/sun4i/sun4i_drv.c b/drivers/gpu/drm/sun4i/sun4i_drv.c
-old mode 100644
-new mode 100755
 index 269ffb9314b5..9b4deaad45bf
 --- a/drivers/gpu/drm/sun4i/sun4i_drv.c
 +++ b/drivers/gpu/drm/sun4i/sun4i_drv.c
@@ -85,7 +82,6 @@ index 269ffb9314b5..9b4deaad45bf
  	.driver_features	= DRIVER_GEM | DRIVER_MODESET | DRIVER_ATOMIC,
  
 diff --git a/drivers/gpu/drm/sun4i/sun8i_bws.c b/drivers/gpu/drm/sun4i/sun8i_bws.c
-new file mode 100644
 index 000000000000..9c8c033ed1fa
 --- /dev/null
 +++ b/drivers/gpu/drm/sun4i/sun8i_bws.c
@@ -123,7 +119,6 @@ index 000000000000..9c8c033ed1fa
 +	regmap_write(map, SUN8I_BWS_CTRL_EN_REG, args->enable);
 +}
 diff --git a/drivers/gpu/drm/sun4i/sun8i_bws.h b/drivers/gpu/drm/sun4i/sun8i_bws.h
-new file mode 100644
 index 000000000000..90fc34cc578c
 --- /dev/null
 +++ b/drivers/gpu/drm/sun4i/sun8i_bws.h
@@ -175,8 +170,6 @@ index 1294fe9cadb9..a1e6d9712861 100644
  static u32 sun8i_vi_layer_get_format_type(const struct drm_format_info *format)
  {
 diff --git a/include/uapi/drm/sun4i_drm.h b/include/uapi/drm/sun4i_drm.h
-old mode 100644
-new mode 100755
 index dcc50ab4ce09..569a5fc4eb38
 --- a/include/uapi/drm/sun4i_drm.h
 +++ b/include/uapi/drm/sun4i_drm.h
