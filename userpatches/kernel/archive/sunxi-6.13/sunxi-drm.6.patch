@@ -189,7 +189,7 @@ index 2b762cb79f02..ebd89ce8bab5 100644
 +#define SUN8I_FCC_HUE_RANGE_HM_REG 0xAA020
 +#define SUN8I_FCC_HUE_RANGE_HY_REG 0xAA024
 +
-+#define SUN8I_FCC_HUE_RANGE_VALUE(min, max) (((max & 0b11111111111) << 16) | (min & 0b11111111111))
++#define SUN8I_FCC_HUE_RANGE_VALUE(min, max) (((max & 0xFFF) << 16) | (min & 0xFFF))
 +
 +#define SUN8I_FCC_LOCAL_GAIN_HR_REG 0xAA030
 +#define SUN8I_FCC_LOCAL_GAIN_HG_REG 0xAA034

@@ -4,4 +4,4 @@
 
 [submodule "userpatches/overlay/camview"]
 	path = userpatches/overlay/camview
-	url = https://github.com/julia-otran/guvcview-opipc.git
+	url = https://github.com/julia-otran/camview-opipc.git
