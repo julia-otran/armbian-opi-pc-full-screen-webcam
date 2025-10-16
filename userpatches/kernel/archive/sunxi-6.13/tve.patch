@@ -258,7 +258,7 @@ index 8ffddaa3e069..a33f7df9d165 100644
 @@ -19,11 +19,11 @@ sun8i-drm-hdmi-y		+= sun8i_hdmi_phy_clk.o
  
  sun8i-mixer-y			+= sun8i_mixer.o sun8i_ui_layer.o \
- 				   sun8i_vi_layer.o sun8i_ui_scaler.o \
+ 				   sun8i_vi_layer.o sun8i_ui_scaler.o sun8i_lti.o \
  				   sun8i_vi_scaler.o sun8i_csc.o \
  				   sun50i_fmt.o sun50i_afbc.o \
 -				   sun8i_bws.o
